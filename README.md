@@ -1,5 +1,7 @@
 # bakircay-2024-gd-210601038
 
+Proje Gösterim Videosu: https://youtu.be/4YiFJ0YghPw
+
 Proje Özellikleri
 Nesne Çekme Mekanizması: Bir nesne Zone’a yaklaştığında otomatik olarak yerine yerleştirilir.
 Tek Nesne Kuralı: Zone aynı anda yalnızca bir nesne kabul eder.
