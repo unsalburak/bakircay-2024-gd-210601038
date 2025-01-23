@@ -1,41 +1,54 @@
 Food Matching Game
-Bu proje, Unity ile geliştirilmiş bir yemek eşleştirme ve skor toplama oyunudur. Sahnede beliren rastgele yemekleri toplayarak veya çeşitli skill tuşlarını kullanarak puan kazanabilirsiniz. Ayrıca UI üzerinden güncel skorunuzu takip edebilirsiniz.
+Food Matching Game, sahnede rastgele beliren yiyecekleri bir konteynır (sandık) içinde eşleştirerek veya çeşitli skill (yetenek) butonlarını kullanarak puan topladığınız eğlenceli bir oyundur.
 
-Nasıl Çalışır?
-Yemeklerin Sahneye Eklenmesi:
+Oyun Mekaniği
+Yiyeceklerin Sahneye Gelmesi
 
-Oyun başladığında belirli sayıda yiyecek (etiketi “Moveable” olan objeler) rastgele konumlarda sahneye eklenir.
-Bu yiyecekler, bir konteynır (sandık) ile etkileşime girer ve içeri alındığında sabit bir noktaya yerleştirilir.
-Yemek Eşleştirme Mekanizması:
+Oyun başladığında, farklı türlerde “Moveable” etiketli yiyecekler belirli bir alana rastgele serpiştirilir.
+Konteynır (Sepet) Etkileşimi
 
-Konteynırın içine aynı anda iki yemek girdiğinde, bu yemeklerin isimlerinin ilk harfi karşılaştırılır.
-Eğer aynı harfle başlıyorlarsa:
-İki yemek yok edilir.
-Harfin puan değeri kadar skor elde edersiniz (örneğin ‘S’ harfi 200 puan).
-Eğer farklı harfle başlıyorlarsa:
-Yemekler konteynırdan çıkarılır ve sahnenin başka bir noktasına geri gönderilir.
-Skor ve UI:
+Sahnedeki yiyecekler konuma getirildiğinde, bir konteynır alanına (sepete) girerek sabit bir noktaya yerleştirilir.
+Konteynırda iki yiyecek birden olduğu anda, aynı yiyecek olup olmadıkları kontrol edilir. Eğer eşleşiyorlarsa bu iki yiyecek yok edilir ve puan kazanırsınız.
+Eğer aynı yiyecek değillerse, ikisi de konteynırdan çıkarılıp sahnede başka bir konuma geri gönderilir.
+Puan ve Skor
 
-Topladığınız veya yok ettiğiniz her yemekten aldığınız puan, ekrandaki Skor (Score) alanında güncellenir.
-TextMesh Pro ile oluşturulan bir metin (UI) üzerinden güncel skor görüntülenir.
-Skill Tuşları
-Oyun içerisinde 3 özel skill tuşu bulunur: Z, X ve C.
+Eşleşen iki yiyecekten kazandığınız puan, ekrandaki Score (TextMesh Pro) ile gösterilir.
+Oyun boyunca yaptığınız hamleler ve kullandığınız skill’ler puanınızı etkiler.
+Skill Butonları
+1) “Yok Et”
+Sahnedeki tüm yiyecekleri tek seferde yok eder.
+Yok edilen her yiyecek için belli bir puan (örn. 30) kazanılır.
+Skill kullanıldıktan sonra belli bir cooldown (ör. 60 saniye) geçmeden yeniden kullanılamaz.
+2) “Steak” Düşür
+Sahneye ek olarak 2 adet Steak yiyeceği ekler.
+Bu yiyecekler de eşleştirme veya başka skill kullanımlarıyla yok edilebilir, puan kazanabilirsiniz.
+Kullanıldıktan sonra 15 saniye boyunca tekrar kullanılamaz.
+3) “Pair Destroy” (Tek Vuruş)
+Tek bir yiyeceğe tıklayarak onu ve varsa eşini (aynı yiyecek olan bir diğerini) hemen yok etmenizi sağlar.
+İki yiyecek birden yok edilirse o yiyeceğin puanı iki kat eklenir.
+Sadece tek kullanım içindir: Butona tıklayıp sahnedeki hedef yiyeceği seçtiğinizde skill devreden çıkar ve 10 saniye cooldown’a girer.
+Nasıl Oynanır?
+Oyunu Başlatın:
 
-Z Skill
-Görevi: 10 saniye boyunca kazanılan puanı 2 katına çıkarır.
-Nasıl Kullanılır?:
-Z tuşuna basıldığında etkinleşir (cooldown süresi bitmişse).
-Aktif olduğu 10 saniye boyunca, yemek eşleştirmeden veya diğer puan kazandıran aksiyonlardan 2x puan alınır.
-10 saniye sonunda bu çarpan biter ve 10 saniyelik bir cooldown başlar.
-X Skill
-Görevi: Sahneye 2 adet Steak (eski adıyla “Golden Apple”) ekler.
-Nasıl Kullanılır?:
-X tuşuna basıldığında, sahnede rastgele konumlarda 2 adet Steak (prefab) oluşturulur.
-Skill kullanıldıktan sonra 15 saniye boyunca tekrar kullanılamaz (cooldown).
-C Skill
-Görevi: Sahnedeki tüm yiyecekleri yok eder ve her yok edilen obje için 30 puan kazandırır.
-Nasıl Kullanılır?:
-C tuşuna basıldığında etkinleşir (cooldown süresi uygunsa).
-Sahnedeki tüm spawn edilmiş yiyecek objeleri yok edilir.
-Yok edilen her obje size 30 puan kazandırır.
-Skill etkinleştikten sonra 60 saniye cooldown başlar ve bu süre dolmadan yeniden kullanılamaz.
+Sahnedeki rastgele konumlanmış yiyecekleri göreceksiniz.
+Yiyecekleri Konteynıra Getirin:
+
+İki aynı yiyecek bir araya gelir gelmez, yok edilerek puan kazandırırlar.
+Farklı yiyecekler konulduğunda ise konteynır onları sahneden başka konumlara geri gönderir.
+Skill Butonlarını Kullanın:
+
+Yok Et: Tüm yiyecekleri anında kaldırıp, her biri için puan elde edersiniz.
+Steak: 2 tane Steak düşürüp sahneye yeni yiyecek ekleyebilirsiniz.
+Pair Destroy: Tek bir yiyeceği (ve varsa aynı yiyeceği) tek hamlede yok ederek büyük puan toplayabilirsiniz.
+Dikkat! Her skillin belirli bir cooldown süresi vardır, butonlar bu süre boyunca devre dışı (gri) görünür.
+Skorunuzu Takip Edin:
+
+Ekrandaki Score yazısından toplam puanınızı canlı olarak görebilirsiniz.
+Yüksek skor için doğru anlarda skill kullanmak ve doğru yiyecekleri eşleştirmek önemlidir.
+Sonuç
+Food Matching Game;
+
+Kısa ve eğlenceli mekanikler,
+Stratejik skill kullanımı,
+Hızlı puan toplama
+gibi unsurlarıyla keyifli bir deneyim sunar. Aynı yiyecekleri konteynır içinde buluşturarak temel puan kazanabilir, “Pair Destroy” skilliyle tek hamlede çok puan toplayabilir veya “Yok Et” skilliyle anında sahneyi temizleyebilirsiniz.
