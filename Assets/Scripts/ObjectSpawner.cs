@@ -1,202 +1,268 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; // UI Image için gerekli
+using UnityEngine.UI;
 
+/// <summary>
+/// Rastgele objeler (dragObjects) spawn eder.
+/// "Steak" butonuna týklayýnca 2 steak üretir, 15 saniye cooldown.
+/// "Yoket" butonuna týklayýnca tüm objeleri yok eder, +30 puan/obje, 60 saniye cooldown.
+/// </summary>
 public class ObjectSpawner : MonoBehaviour
 {
-    [SerializeField] private DragObject[] dragObjects;
-    [SerializeField] private GameObject steakPrefab;
-    [SerializeField] private float radius;
+    [Header("Objeleri ve Prefablarý")]
+    [SerializeField] private DragObject[] dragObjects;   // Farklý tür yiyeceklerin prefab'larýný tutan dizi
+    [SerializeField] private GameObject steakPrefab;      // Steak (önceden GoldenApple)
 
-    [SerializeField] private Image xSkillImage; 
-    [SerializeField] private Image cSkillImage; 
+    [Header("Spawn Ayarlarý")]
+    [SerializeField] private float radius = 5f; // Rastgele spawn alaný yarýçapý
 
+    [Header("Buton Referanslarý (Steak & Yoket)")]
+    [SerializeField] private Button steakButton;          // "Steak Düþür" butonu
+    [SerializeField] private Button yoketButton;          // "Yok Et" butonu
+
+    [Header("Görsel Referanslar (Opsiyonel)")]
+    [SerializeField] private Image steakSkillImage;       // Steak skill için UI image göstergesi
+    [SerializeField] private Image yoketSkillImage;       // Yoket skill için UI image göstergesi
+
+    // Steak skill cooldown kontrolü
+    private bool canUseSteakSkill = true;
+    private float steakCooldown = 15f;
+
+    // Yoket skill cooldown kontrolü
+    private bool canUseYoketSkill = true;
+    private float yoketCooldown = 60f;
+
+    // Mevcut sahnedeki objeleri takip
     private List<GameObject> spawnedObjects = new List<GameObject>();
 
-    private bool canUseXSkill = true; 
-    private bool canUseCSkill = true; 
-
-    
-    private float cSkillCooldown = 60f;
-    private float cSkillCooldownTimer = 0f;
-
+    // Skor artýþý için FruitContainer'a eriþmek istiyoruz
+    [Header("Skor Sistemi")]
     [SerializeField] private FruitContainer fruitContainer;
 
-    void Start()
+    private void Start()
     {
-
+        // Eðer FruitContainer atanmadýysa sahnede ara
         if (fruitContainer == null)
         {
             fruitContainer = FindObjectOfType<FruitContainer>();
             if (fruitContainer == null)
             {
-                Debug.LogError("FruitContainer is not found in the scene! Please assign it in the Inspector.");
+                Debug.LogError("FruitContainer not found in the scene!");
             }
         }
 
-        // Ýlk spawn iþlemi
+        // Sahne baþýnda objeleri spawn et
         SpawnObjects();
+
+        // Butonlarýn OnClick event'ini Inspector'da ya da burada ekleyebilirsiniz.
+        if (steakButton != null)
+        {
+            steakButton.onClick.AddListener(OnSteakButtonClicked);
+        }
+        if (yoketButton != null)
+        {
+            yoketButton.onClick.AddListener(OnYoketButtonClicked);
+        }
     }
 
-    void Update()
+    private void Update()
     {
-        // Eðer sahnede spawnlanan objelerin hepsi yok edilmiþse yeniden spawn et
-        spawnedObjects.RemoveAll(obj => obj == null); // Listeyi null olan objelerden temizle
+        // Yok olan objeleri listeden temizle
+        spawnedObjects.RemoveAll(obj => obj == null);
+
+        // Sahnedeki tüm objeler yok olmuþsa tekrar spawn et
         if (spawnedObjects.Count == 0)
         {
             SpawnObjects();
         }
+    }
 
-        // X tuþuna basýldýðýnda Golden Apple spawn et ve X skillini 15sn boyunca devre dýþý býrak
-        if (Input.GetKeyDown(KeyCode.X) && canUseXSkill)
+    #region --- STEAK Skill ---
+
+    /// <summary>
+    /// Steak butonuna týklanýnca çalýþacak metod
+    /// </summary>
+    public void OnSteakButtonClicked()
+    {
+        if (canUseSteakSkill)
         {
+            // 2 adet steak spawn
             SpawnSteak();
-            StartCoroutine(DisableXSkillTemporarily());
-        }
-
-        // C tuþunun cooldown kontrolü
-        if (cSkillCooldownTimer > 0)
-        {
-            cSkillCooldownTimer -= Time.deltaTime; // Cooldown süresi azalýyor
+            // 15 saniye cooldown coroutini baþlat
+            StartCoroutine(SteakSkillCooldown());
         }
         else
         {
-            canUseCSkill = true; // C skillinin cooldown süresi bittiðinde tekrar kullanýlabilir
-            // C skillinin UI görselini tekrar aktif et
-            if (cSkillImage != null && !cSkillImage.gameObject.activeSelf)
-            {
-                cSkillImage.gameObject.SetActive(true);
-            }
-        }
-
-        // C tuþuna basýldýðýnda skill aktifse, tüm objeleri yok et ve puan ver
-        if (Input.GetKeyDown(KeyCode.C) && canUseCSkill && cSkillCooldownTimer <= 0)
-        {
-            ActivateCSkill();
+            Debug.Log("Steak skill þu an kullanýlamaz (cooldown devam ediyor).");
         }
     }
 
-    /// <summary>
-    /// C skill (eski E): Tüm objeleri yok eder, her biri için 30 puan verir.
-    /// </summary>
-    private void ActivateCSkill()
-    {
-        canUseCSkill = false;
-        cSkillCooldownTimer = cSkillCooldown; // Cooldown baþlat
-
-        // C skill image'i devre dýþý býrak
-        if (cSkillImage != null)
-        {
-            cSkillImage.gameObject.SetActive(false);
-        }
-        else
-        {
-            Debug.LogError("C Skill Image is not assigned!");
-        }
-
-        // Tüm spawnlanmýþ objeleri yok et, puan ekle
-        int objectCount = spawnedObjects.Count;
-
-        foreach (var obj in spawnedObjects)
-        {
-            if (obj != null)
-            {
-                Destroy(obj);
-            }
-        }
-        // Listeyi temizle
-        spawnedObjects.Clear();
-
-        // FruitContainer'a objectCount * 30 kadar puan ekle
-        if (fruitContainer != null)
-        {
-            fruitContainer.AddScore(objectCount * 30);
-        }
-
-        Debug.Log($"C skill aktif! {objectCount} nesne yok edildi. Toplam kazanýlan puan: {objectCount * 30}");
-    }
-
-    /// <summary>
-    /// Rastgele meyveleri sahneye spawn eder.
-    /// </summary>
-    private void SpawnObjects()
-    {
-        foreach (var dragObject in dragObjects)
-        {
-            for (int i = 0; i < 2; i++) // Her prefab'dan 2 tane spawn et
-            {
-                var instance = Instantiate(dragObject.Prefab, transform);
-                instance.transform.localPosition = GetRandomPosition();
-                spawnedObjects.Add(instance); // Spawnlanan objeyi listeye ekle
-            }
-        }
-    }
-
-    /// <summary>
-    /// X skill (eski W): Golden Apple spawn eder, 15 saniye cooldown'a girer.
-    /// </summary>
     private void SpawnSteak()
     {
         if (steakPrefab != null)
         {
-            for (int i = 0; i < 2; i++) // Golden Apple'dan 2 tane spawn et
+            // 2 adet steak oluþtur
+            for (int i = 0; i < 2; i++)
             {
-                var goldenAppleInstance = Instantiate(steakPrefab, transform);
-                goldenAppleInstance.transform.localPosition = GetRandomPosition();
-                spawnedObjects.Add(goldenAppleInstance); // Listeye ekle
+                GameObject steak = Instantiate(steakPrefab, transform);
+                steak.transform.localPosition = GetRandomPosition();
+                spawnedObjects.Add(steak);
             }
-            Debug.Log("Golden Apple spawned!");
+            Debug.Log("Steak spawned!");
         }
         else
         {
-            Debug.LogError("Golden Apple Prefab is not assigned!");
+            Debug.LogError("steakPrefab is not assigned!");
         }
 
-        // X tuþuna basýldýðýnda görseli gizle
-        if (xSkillImage != null)
+        // Ýsterseniz steakSkillImage'i kapatabilirsiniz
+        if (steakSkillImage != null)
         {
-            xSkillImage.gameObject.SetActive(false); // Görseli gizle
-        }
-        else
-        {
-            Debug.LogError("X Skill Image is not assigned!");
+            steakSkillImage.gameObject.SetActive(false);
         }
     }
 
-    /// <summary>
-    /// X skillin 15 saniye kapalý kalmasýný saðlar.
-    /// </summary>
-    private System.Collections.IEnumerator DisableXSkillTemporarily()
+    private IEnumerator SteakSkillCooldown()
     {
-        canUseXSkill = false; // X skillini geçici olarak devre dýþý býrak
+        // Skill kullanýlamaz
+        canUseSteakSkill = false;
+
+        // Buton gri olsun
+        if (steakButton != null)
+        {
+            steakButton.interactable = false;
+        }
 
         // 15 saniye bekle
-        yield return new WaitForSeconds(15f);
+        yield return new WaitForSeconds(steakCooldown);
 
-        // Süre bitince X skillini tekrar kullanýlabilir yap
-        canUseXSkill = true;
+        // Cooldown bitti
+        canUseSteakSkill = true;
 
-        // Görseli tekrar aktif et
-        if (xSkillImage != null)
+        // Görseli tekrar aç
+        if (steakSkillImage != null)
         {
-            xSkillImage.gameObject.SetActive(true);
+            steakSkillImage.gameObject.SetActive(true);
         }
-        else
+
+        // Buton tekrar aktif
+        if (steakButton != null)
         {
-            Debug.LogError("X Skill Image is not assigned!");
+            steakButton.interactable = true;
         }
     }
 
-    private void OnDrawGizmosSelected()
+    #endregion
+
+    #region --- YOKET Skill ---
+
+    /// <summary>
+    /// Yoket butonuna týklanýnca çalýþacak metod
+    /// </summary>
+    public void OnYoketButtonClicked()
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, radius);
+        if (canUseYoketSkill)
+        {
+            // Tüm objeleri yok et + skor ekle
+            YoketTümObjeler();
+            // 60 saniye cooldown coroutini baþlat
+            StartCoroutine(YoketSkillCooldown());
+        }
+        else
+        {
+            Debug.Log("Yoket skill þu an kullanýlamaz (cooldown devam ediyor).");
+        }
+    }
+
+    private void YoketTümObjeler()
+    {
+        int objectCount = spawnedObjects.Count;
+        foreach (GameObject obj in spawnedObjects)
+        {
+            if (obj != null) Destroy(obj);
+        }
+        spawnedObjects.Clear();
+
+        // Her obje için +30 puan
+        if (fruitContainer != null)
+        {
+            fruitContainer.AddScore(objectCount * 30);
+        }
+        Debug.Log($"Yoket skill aktif! {objectCount} obje yok edildi, +{objectCount * 30} puan.");
+    }
+
+    private IEnumerator YoketSkillCooldown()
+    {
+        // Skill kullanýlamaz
+        canUseYoketSkill = false;
+
+        // Buton gri olsun
+        if (yoketButton != null)
+        {
+            yoketButton.interactable = false;
+        }
+
+        // Görseli kapat
+        if (yoketSkillImage != null)
+        {
+            yoketSkillImage.gameObject.SetActive(false);
+        }
+
+        // 60 saniye bekle
+        yield return new WaitForSeconds(yoketCooldown);
+
+        // Cooldown bitti
+        canUseYoketSkill = true;
+
+        // Görseli tekrar aç
+        if (yoketSkillImage != null)
+        {
+            yoketSkillImage.gameObject.SetActive(true);
+        }
+
+        // Buton tekrar aktif
+        if (yoketButton != null)
+        {
+            yoketButton.interactable = true;
+        }
+    }
+
+    #endregion
+
+    #region --- OBJELERÝ SPAWN ETME ---
+
+    private void SpawnObjects()
+    {
+        // dragObjects dizisindeki her prefabdan 2 adet rastgele konumda oluþtur
+        foreach (var dragObject in dragObjects)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                GameObject instance = Instantiate(dragObject.Prefab, transform);
+                instance.transform.localPosition = GetRandomPosition();
+                spawnedObjects.Add(instance);
+            }
+        }
     }
 
     private Vector3 GetRandomPosition()
     {
-        Vector3 randomOffset = Random.insideUnitCircle * radius;
-        var randomPosition = transform.position + randomOffset;
-        return new Vector3(randomPosition.x, 2, randomPosition.y);
+        // Belirtilen radius içinde rastgele bir konum (2D daire)
+        Vector2 randomOffset = Random.insideUnitCircle * radius;
+        // Bunu 3D pozisyona çevir
+        Vector3 spawnPos = transform.position + new Vector3(randomOffset.x, 0, randomOffset.y);
+        // Y eksenini biraz yukarý alabiliriz
+        spawnPos.y = 1.5f;
+        return spawnPos;
     }
+
+    private void OnDrawGizmosSelected()
+    {
+        // Editörde spawn alanýný göstermek için
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, radius);
+    }
+
+    #endregion
 }

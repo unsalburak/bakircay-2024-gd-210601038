@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2343368863543490527}
   - component: {fileID: 8040340240721026398}
   m_Layer: 0
-  m_Name: Bread
+  m_Name: Ekmek
   m_TagString: Moveable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
